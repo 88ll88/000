@@ -1,4 +1,4 @@
-name: Lotto 539 Auto Update
+name: Lotto 539 Playwright Update
 
 on:
   schedule:
@@ -21,7 +21,12 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run update script
+      - name: Install dependencies
+        run: |
+          npm init -y
+          npm install playwright
+
+      - name: Run Playwright update script
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: node update.js
