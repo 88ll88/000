@@ -1,32 +1,27 @@
-name: Lotto 539 Playwright Update
+name: Update Lotto 539
 
 on:
   schedule:
-    - cron: '35 12 * * 1-6'
-    - cron: '0 13 * * 1-6'
-    - cron: '30 13 * * 1-6'
-    - cron: '0 14 * * 1-6'
+    # 台灣時間 20:30 ~ 20:40 (UTC 時間為 12:30 ~ 12:40)
+    # 週一到週六 (1-6) 每 2 分鐘執行一次
+    - cron: '30,32,34,36,38,40 12 * * 1-6'
   
+  # 允許您在網頁上手動點擊 "Run workflow" 按鈕測試
   workflow_dispatch:
 
 jobs:
-  update-lotto:
+  update-data:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: 檢出程式碼庫 (Checkout)
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: 設定 Node.js 環境
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: |
-          npm init -y
-          npm install playwright
-
-      - name: Run Playwright update script
+      - name: 執行更新腳本
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: node update.js
