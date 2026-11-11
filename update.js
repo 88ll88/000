@@ -20,19 +20,30 @@ function getTodayString() {
 function fetchLatestNumbers() {
     return new Promise((resolve, reject) => {
         https.get(TARGET_URL, (res) => {
-            let html = '';
-            res.on('data', (chunk) => { html += chunk; });
+            let chunks = [];
+            res.on('data', (chunk) => { chunks.push(chunk); });
             res.on('end', () => {
                 try {
-                    // 使用正則表達式動態抓取 bgcolor="#ffff99" 裡的號碼
-                    const regex = /bgcolor="#ffff99"[^>]*>\s*(\d{2})\s*<\/td>/gi;
+                    // 為了避免 big5 編碼問題，直接把 Buffer 轉成字串，並用更寬鬆的正則找出所有的兩位數號碼
+                    const html = Buffer.concat(chunks).toString('binary');
+                    
+                    // 直接尋找網頁裡所有呈現兩位數字的 td 內容（例如 19, 29 等）
+                    const regex = /<td[^>]*>\s*(\d{2})\s*<\/td>/gi;
                     const matches = [...html.matchAll(regex)];
                     const balls = matches.map(m => m[1]);
 
-                    if (balls.length !== 5) {
-                        return reject(new Error(`抓到的號碼數量不正確: ${balls.length}`));
+                    console.log(`[偵測] 總共抓到的符合標籤數: ${balls.length}`);
+                    if (balls.length > 0) {
+                        console.log(`[偵測] 抓到的內容預覽: ${balls.slice(0, 5).join(', ')}`);
                     }
-                    resolve(balls);
+
+                    // 取前 5 個號碼
+                    const latestBalls = balls.slice(0, 5);
+
+                    if (latestBalls.length !== 5) {
+                        return reject(new Error(`抓到的號碼數量不正確: ${latestBalls.length}`));
+                    }
+                    resolve(latestBalls);
                 } catch (err) {
                     reject(err);
                 }
