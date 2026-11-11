@@ -19,39 +19,28 @@ function getTodayString() {
 // 動態抓取網頁號碼
 function fetchLatestNumbers() {
     return new Promise((resolve, reject) => {
-        https.get(TARGET_URL, (res) => {
+        https.get(TARGET_URL, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+        }, (res) => {
             let chunks = [];
             res.on('data', (chunk) => { chunks.push(chunk); });
             res.on('end', () => {
-                try {
-                    // 為了避免 big5 編碼問題，直接把 Buffer 轉成字串，並用更寬鬆的正則找出所有的兩位數號碼
-                    const html = Buffer.concat(chunks).toString('binary');
-                    
-                    // 直接尋找網頁裡所有呈現兩位數字的 td 內容（例如 19, 29 等）
-                    const regex = /<td[^>]*>\s*(\d{2})\s*<\/td>/gi;
-                    const matches = [...html.matchAll(regex)];
-                    const balls = matches.map(m => m[1]);
+                const html = Buffer.concat(chunks).toString('binary');
+                console.log(`[偵測] 原始網頁片段預覽:`, html.substring(0, 200));
 
-                    console.log(`[偵測] 總共抓到的符合標籤數: ${balls.length}`);
-                    if (balls.length > 0) {
-                        console.log(`[偵測] 抓到的內容預覽: ${balls.slice(0, 5).join(', ')}`);
-                    }
+                const regex = /bgcolor="#ffff99"[^>]*>\s*(\d{2})\s*<\/td>/gi;
+                const matches = [...html.matchAll(regex)];
+                const balls = matches.map(m => m[1]);
 
-                    // 取前 5 個號碼
-                    const latestBalls = balls.slice(0, 5);
-
-                    if (latestBalls.length !== 5) {
-                        return reject(new Error(`抓到的號碼數量不正確: ${latestBalls.length}`));
-                    }
-                    resolve(latestBalls);
-                } catch (err) {
-                    reject(err);
+                console.log(`[偵測] 總共抓到的符合標籤數: ${balls.length}`);
+                if (balls.length !== 5) {
+                    return reject(new Error(`抓到的號碼數量不正確: ${balls.length}`));
                 }
+                resolve(balls);
             });
         }).on('error', reject);
     });
 }
-
 async function runUpdate() {
     try {
         const currentTime = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
